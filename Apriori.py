@@ -31,7 +31,7 @@ def generate_candidates(prev_frequent_itemsets, k):
     return candidates
 
 
-def apriori(transactions, min_support = 0.3):
+def apriori(transactions, min_support=0.3):
     single_items = defaultdict(int)
     for t in transactions:
         for item in t:
@@ -43,12 +43,12 @@ def apriori(transactions, min_support = 0.3):
         L1 = set()
         support_data = {}
         for item, count in single_items.items():
-            support = count/num_transactions
+            support = count / num_transactions
             if support >= min_support:
                 L1.add((item,))
-                support_data[(item,)]=support
+                support_data[(item,)] = support
         all_frequents = list(L1)
-        k=2
+        k = 2
         Lk = L1
 
         while Lk:
@@ -70,3 +70,36 @@ frequent_itemsets, support_data = apriori(shoptransactions, min_support=0.3)
 print("Frequent Itemsets:")
 for itemset in frequent_itemsets:
     print(itemset, support_data[itemset])
+
+
+def generate_rules(frequent_itemsets, support_data, min_confidence=0.6):
+    rules = []
+
+    for itemset in frequent_itemsets:
+        if len(itemset) < 2:
+            continue
+
+        for i in range(1, len(itemset)):
+            for antecedent in combinations(itemset, i):
+                consequent = tuple(sorted(set(itemset) - set(antecedent)))
+
+                if antecedent in support_data and itemset in support_data:
+                    confidence = support_data[itemset] / support_data[antecedent]
+
+                    if confidence >= min_confidence:
+                        lift = confidence / support_data[consequent]
+
+                        rules.append({"rule": f"{antecedent} -> {consequent}", "support": support_data[itemset],
+                                      "confidence": confidence, "lift": lift})
+
+    return rules
+
+
+rules = generate_rules(frequent_itemsets, support_data)
+for r in rules:
+    print(r)
+
+print("\nKey Insights")
+for r in rules:
+    if r["lift"] > 1:
+        print(f"Strong associations: {r['rule']} (lift={r['lift']:.2f})")
